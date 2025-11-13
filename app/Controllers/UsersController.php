@@ -15,6 +15,7 @@ class UsersController extends BaseController
     protected $menuActive;
     protected $pdnTitle;
     protected $folderName;
+    protected $mainModel;
 
     public function __construct()
     {
@@ -23,19 +24,22 @@ class UsersController extends BaseController
         $this->pdnTitle     = 'User';
         $this->urlName      = 'users';
         $this->folderName   = 'users';
+        $this->mainModel    = new UsersModel();
     }
 
     public function index()
     {
-        $this->data['pdn_title']         = 'Data User';
+        $this->data['pdn_title']         = 'Data '.$this->pdnTitle;
+        $this->data['pdn_url']           = $this->urlName;
         $this->data[$this->menuActive]   = 'active';
-        return view('users/content', $this->data);
+        return view($this->folderName.'/content', $this->data);
     }
     // SIMPAN DATA
     public function tambah()
     {
         helper('form');
-        $this->data['pdn_title']         = 'Data User';
+        $this->data['pdn_title']         = 'Tambah Data '.$this->pdnTitle;
+        $this->data['pdn_url']           = $this->urlName;
         $this->data[$this->menuActive]   = 'active';
 
         $this->data['first_name'] = [
@@ -145,16 +149,15 @@ class UsersController extends BaseController
                     'role'          => $this->request->getPost('users_level'),
                     'token'         => bin2hex(random_bytes(16))
                 ];
-                // Panggil model
-                $usersModel = new UsersModel();
+
                 // Simpan Data
-                $proses_simpan = $usersModel->insert($simpan_data);
+                $proses_simpan = $this->mainModel->insert($simpan_data);
                 if ($proses_simpan){
                     // Prosess Simpan data berhasil
-                    return redirect()->to($this->urlName)->with('success','Data berhasil disimpan.');
+                    return redirect()->to($this->urlName)->with('success','Data '.$this->pdnTitle.' berhasil disimpan.');
                 }else{
                     //Simpan data tidak berhasil
-                    return redirect()->to($this->urlName)->with('error','Maaf, Data tidak berhasil disimpan.');
+                    return redirect()->to($this->urlName)->with('error','Maaf, Data '.$this->pdnTitle.' tidak berhasil disimpan.');
                 }
             }
         }
@@ -166,12 +169,12 @@ class UsersController extends BaseController
         // Redirect atau tampilkan error
         return redirect()->to($this->urlName)->with('error', 'ID tidak ditemukan');
         }
-
-        $model = new UsersModel();
-        $data = $model->find($id);
+        // Get DATA
+        $data = $this->mainModel->find($id);
 
         helper('form');
-        $this->data['pdn_title']        = 'Edit '.$this->pdnTitle;
+        $this->data['pdn_title']        = 'Edit Data '.$this->pdnTitle;
+        $this->data['pdn_url']           = $this->urlName;
         $this->data[$this->menuActive]  = 'active';
         $this->data['update_id']        = $data->id;
 
@@ -245,7 +248,7 @@ class UsersController extends BaseController
 
             if (! $this->validateData($data_req, $rules)) {
                 // Jika Error dana Role Update
-                return view('users/edit', $this->data);
+                return view($this->folderName.'/edit', $this->data);
             }else{
                 // Jika tidak ada masalah, lanjut ke prosess simpan data
 
@@ -255,14 +258,14 @@ class UsersController extends BaseController
                     'email'         => $this->request->getPost('email'),
                     'role'          => $this->request->getPost('users_level'),
                 ];
-                $usersModel = new UsersModel();
-                $diUpdate = $usersModel->update($this->request->getPost('id'), $data_update);
+
+                $diUpdate = $this->mainModel->update($this->request->getPost('id'), $data_update);
                 if($diUpdate){
                     // Jika prosess Update Lancar
-                    return redirect()->to($this->urlName)->with('success','Data berhasil diupdate.');
+                    return redirect()->to($this->urlName)->with('success','Data '.$this->pdnTitle.' berhasil diupdate.');
                 }else{
                     // Jika Prosess Update Bermasalah
-                    return redirect()->to($this->urlName)->with('error','Maaf, Data tidak berhasil diupdate.');
+                    return redirect()->to($this->urlName)->with('error','Maaf, Data '.$this->pdnTitle.' tidak berhasil diupdate.');
                 }
             }
         }
@@ -271,9 +274,8 @@ class UsersController extends BaseController
     // HAPUS DATA
     public function hapus($id)
     {
-        $model = new UsersModel();
-        $model->delete($id);
-        return redirect()->to($this->urlName)->with('success', 'Data berhasil dihapus.');
+        $this->mainModel->delete($id);
+        return redirect()->to($this->urlName)->with('success', 'Data '.$this->pdnTitle.' berhasil dihapus.');
     }
     // JOSN DATATBLES
     public function data_json()
@@ -292,7 +294,8 @@ class UsersController extends BaseController
         if ($request->getMethod(true) === 'POST') {
             $lists = $datamodel->get_datatables();
             $data = [];
-            $no = $request->getPost('start');
+            //$no = $request->getPost('start');
+            $no = $request->getPost('start') ?? 1;
 
             foreach ($lists as $pDn) {
                 $no++;
@@ -330,6 +333,4 @@ class UsersController extends BaseController
         }
     }
 
-
-    
 }
